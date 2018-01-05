@@ -38,15 +38,15 @@ It simply ensures that `dh-pipenv` and `pipenv` are installed, and then asks
 ## Testing:
 
 dh-pipenv needs to be accessible via `pypi`, to avoid spamming pypi with broken
-builds I used [`pypi-server`](TODO) to run a local pypi server. Then my
-development workflow looked like this
+builds I used [`pypi-server`](https://pypi.python.org/pypi/pypiserver) to run a
+local pypi server. Then my development workflow looked like this
 
 1. Edit `dh-pipenv`
 2. Run `python setup.py sdist upload -r localpypi`
 3. Attempt to run `dh-virtualenv` in a repo that had it enabled
 
-Setup of pypi server was done by following the [docs here](TODO). Then I ran it
-with:
+Setup of pypi server was done by following the
+[docs here](https://pypi.python.org/pypi/pypiserver). Then I ran it with:
 
 ```
 pypi-server -p 8080 --overwrite -P .htpasswd packages
