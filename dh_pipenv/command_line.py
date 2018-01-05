@@ -31,16 +31,21 @@ def _remove_kwarg(args, kwarg):
 
 def convert_pip_args_to_pipenv_args(pip_args):
     """Remove non pipenv compatible args from arg list meant for pip_args.
-
-    Only works when `-r` is in pip_args
     """
     # Remove -r requirements.txt
-    r_index = pip_args.index('-r')
-    pip_args = pip_args[:r_index] + pip_args[r_index + 2:]
-    # Remove --extra-index-url=...
-    pip_args = [arg for arg in pip_args if '--extra-index-url=' not in arg]
-    # Remove --log
-    pip_args = [arg for arg in pip_args if '--log=' not in arg]
+    try:
+        r_index = pip_args.index('-r')
+    except ValueError:
+        # Unsupported behavior, but if you want to use this outside of this
+        # package, go for it and "good luck"
+        pass
+    else:
+        pip_args = pip_args[:r_index] + pip_args[r_index + 2:]
+    for kwarg in [
+            '--index-url',
+            '--extra-index-url',
+            '--log']:
+        pip_args = _remove_kwarg(pip_args, kwarg)
     # Add additional args
     # Can't be specified by --extra-pip-arg in debian/rules because used by pip
     # when installing preinstall packages ie) pipenv
@@ -48,7 +53,6 @@ def convert_pip_args_to_pipenv_args(pip_args):
 
 
 def main():
-    print sys.argv
     dh_pipenv = sys.argv[0]
     # Get path of dh_pipenv pipenv
     assert os.path.isfile(dh_pipenv), "We should have a full path to dh_pipenv"
