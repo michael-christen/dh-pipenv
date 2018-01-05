@@ -12,6 +12,9 @@ parameters that are incompatible with `pipenv`.
 
 Parameters we are currently filtering out include
 * `--log` - passed by default from `dh-virtualenv`
+* `--index-url` - someone might want to specify this for their pre-install
+  packages, your Pipfile.lock should specify any specific indexes when installing
+  via `pipenv`
 * `--extra-index-url` (required for installing `dh-pipenv` when running
   locally)
 
