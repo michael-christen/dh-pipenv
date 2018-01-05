@@ -1,50 +1,50 @@
 """Shim between dh_virtualenv and pipenv
+
+When -r is used for pip to install dependencies use pipenv instead and remove
+incompatible arguments.
 """
 import os
 import subprocess
 import sys
 
 
-def remove_requirements(pip_args):
-    # Check that -r requirements.txt is there
-    # assert '-r' in pip_args, "-r not in args to pip-tool"
-    # TODO: requirements.txt isn't always it, ie) ./requirements.txt
-    # assert 'requirements.txt' in pip_args[r_index+1], "requirements.txt not after -r in args to pip-tool"
-    # Remove -r requirements.txt
+def _remove_kwarg(args, kwarg):
+    """Remove kwarg and its value from args.
+
+    If both are in one arg (--log=hi), remove that element, but if they are
+    split between two args ['--log', 'hi'] remove both.
+
+    Args:
+        args ([str, ...]): List of strings
+        kwarg (str): Usually of the form '--<name>' ie) '--log'
+    """
+    args = [arg for arg in args if '%s=' % kwarg not in arg]
+    # If kwarg is by self, remove it and its value
     try:
-        r_index = pip_args.index('-r')
+        index = args.index(kwarg)
     except ValueError:
-        return pip_args
+        pass
     else:
-        return pip_args[:r_index] + pip_args[r_index + 2:]
+        args = args[:index] + args[index + 2:]
+    return args
 
 
-def remove_extra_index(pip_args):
-    return [arg for arg in pip_args if '--extra-index-url=' not in arg]
+def convert_pip_args_to_pipenv_args(pip_args):
+    """Remove non pipenv compatible args from arg list meant for pip_args.
 
-
-def remove_log(pip_args):
-    return [arg for arg in pip_args if '--log=' not in arg]
-
-
-def convert_pip_args_to_pipenv_args(bin_dir, pip_args):
-    # Fallback to pip if requirements.txt not specified
-    if '-r' not in pip_args:
-        return [os.path.join(bin_dir, 'pip')] + pip_args
-    pipenv_args = [os.path.join(bin_dir, 'pipenv')]
-    # Remove any problem args
+    Only works when `-r` is in pip_args
+    """
     # Remove -r requirements.txt
-    pip_args = remove_requirements(pip_args)
+    r_index = pip_args.index('-r')
+    pip_args = pip_args[:r_index] + pip_args[r_index + 2:]
     # Remove --extra-index-url=...
-    pip_args = remove_extra_index(pip_args)
+    pip_args = [arg for arg in pip_args if '--extra-index-url=' not in arg]
     # Remove --log
-    pip_args = remove_log(pip_args)
-    # Add pip_args to pipenv_args
-    pipenv_args += pip_args
-    # TODO: Add additional args, ie) --system
+    pip_args = [arg for arg in pip_args if '--log=' not in arg]
+    # Add additional args
     # Can't be specified by --extra-pip-arg in debian/rules because used by pip
-    pipenv_args += ['--system', '--deploy']
-    return pipenv_args
+    # when installing preinstall packages ie) pipenv
+    return pip_args + ['--system', '--deploy']
 
 
 def main():
@@ -53,15 +53,24 @@ def main():
     # Get path of dh_pipenv pipenv
     assert os.path.isfile(dh_pipenv), "We should have a full path to dh_pipenv"
     bin_dir = os.path.dirname(dh_pipenv)
-    pipenv_args = convert_pip_args_to_pipenv_args(bin_dir, sys.argv[1:])
-    # Set VIRTUAL_ENV
-    # TODO: Possibly only set for pipenv
-    venv_dir = os.path.dirname(bin_dir)
-    pipenv = os.path.join(os.path.dirname(dh_pipenv), 'pipenv')
+    pip_path = os.path.join(bin_dir, 'pip')
+    pipenv_path = os.path.join(bin_dir, 'pipenv')
+    assert os.path.isfile(pip_path), "Can't find pip: %s" % pip_path
+    assert os.path.isfile(pipenv_path), "Can't find pipenv: %s" % pipenv_path
+    # Setup environment variables
     environment = os.environ.copy()
-    environment['VIRTUAL_ENV'] = environment.get('VIRTUAL_ENV', venv_dir)
-    # TODO: Check if we should add ENV variables
-    subprocess.check_call(pipenv_args, env=environment)
+    # Fallback to pip if requirements.txt not specified
+    pip_args = sys.argv[1:]
+    if '-r' not in pip_args:
+        cmd_args = [pip_path] + pip_args
+    else:
+        pipenv_args = convert_pip_args_to_pipenv_args(sys.argv[1:])
+        cmd_args = [pipenv_path] + pipenv_args
+        # Set VIRTUAL_ENV only for `pipenv`, to make sure it installs files in
+        # the right location.
+        venv_dir = os.path.dirname(bin_dir)
+        environment['VIRTUAL_ENV'] = environment.get('VIRTUAL_ENV', venv_dir)
+    subprocess.check_call(cmd_args, env=environment)
 
 
 if __name__ == '__main__':
