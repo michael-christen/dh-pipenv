@@ -31,10 +31,6 @@ override_dh_virtualenv:
 It simply ensures that `dh-pipenv` and `pipenv` are installed, and then asks
 `dh-virtualenv` to install with `dh-pipenv` instead of default `pip`.
 
-## TODO:
-
-- [ ] Setup on pypi
-
 ## Testing:
 
 dh-pipenv needs to be accessible via `pypi`, to avoid spamming pypi with broken
