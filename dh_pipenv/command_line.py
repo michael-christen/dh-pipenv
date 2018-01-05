@@ -68,6 +68,10 @@ def main():
     if '-r' not in pip_args:
         cmd_args = [pip_path] + pip_args
     else:
+        # Ensure Pipfile.lock exists
+        pipfile_exists = os.path.isfile(os.path.join(os.getcwd(), 'Pipfile.lock'))
+        assert pipfile_exists, "Pipfile.lock doesn't exist"
+        # Get args
         pipenv_args = convert_pip_args_to_pipenv_args(sys.argv[1:])
         cmd_args = [pipenv_path] + pipenv_args
         # Set VIRTUAL_ENV only for `pipenv`, to make sure it installs files in
