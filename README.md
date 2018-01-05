@@ -24,7 +24,7 @@ your `debian/rules` file.
 override_dh_virtualenv:
     dh_virtualenv \
         --preinstall pipenv==9.0.1 \
-        --preinstall dh-pipenv==0.1.0 \
+        --preinstall dh-pipenv==0.1.1 \
         --pip-tool dh-pipenv
 ```
 
