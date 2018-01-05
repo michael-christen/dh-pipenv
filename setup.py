@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='dh-pipenv',
-      version='0.1.0',
+      version='0.1.1',
       description='Shim between dh-virtualenv and pipenv',
       url='http://github.com/michael-christen/dh-pipenv',
       author='Michael Christen',
